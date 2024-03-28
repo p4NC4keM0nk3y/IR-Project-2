@@ -179,9 +179,26 @@ public class Project2Take2 {
 
             String words = DocIdAndContent.get(i);
             Map<String, Integer> termFreqMap = new HashMap<>();
+            
+            StringTokenizer tokenizer = new StringTokenizer(words);
+            while (tokenizer.hasMoreTokens()){
+                String word = tokenizer.nextToken();
+                word = word.toLowerCase();
+                if (word.equals(".a") || word.equals(".i") || word.equals(".w") || word.equals(".b") || word.equals(".t")) {
+                    continue;
+                }
 
+               
+    
+                termFreqMap.put(word, termFreqMap.getOrDefault(word, 0)+1);
+            }
+
+            TermFrequency.put(i, termFreqMap);
         }
-        
+        for(int j: TermFrequency.keySet()){
+            System.out.println(TermFrequency.get(j));
+        }
+      
         return TermFrequency;        
     }
 
