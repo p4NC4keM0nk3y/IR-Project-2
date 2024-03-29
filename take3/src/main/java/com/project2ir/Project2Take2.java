@@ -4,7 +4,7 @@ import java.io.*;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 /**
  * TODO: 
- * Finish making tf for each document within corpus
+ *
  * add query search
  */
 public class Project2Take2 {
@@ -17,10 +17,9 @@ public class Project2Take2 {
         Map<Integer,Map<String,Integer>> TermFrequency = new HashMap<Integer,Map<String,Integer>>();
         buildNumber(DocIdAndTitle);
         buildContent(DocIdAndContent);
-        buildFrequencyinDocument(TermFreqInDocument, DocIdAndContent);
         buildFrequencyinCorpus(TermFreqInCorpus);
         TermFreq(DocIdAndContent, TermFrequency);
-        int TotalCount = wordCount(TermFreqInCorpus);
+        getScores(TermFrequency);
 
 
     }
@@ -111,20 +110,6 @@ public class Project2Take2 {
         return DocIdAndContent;
     }
 
-    //TODO : Finish This Function
-    private static Map<Integer,Map<String,Integer>> buildFrequencyinDocument(Map<Integer,Map<String,Integer>> TermFreqInDocument, HashMap<Integer, String> DocIdAndContent){
-        //int numTimes = 0; 
-        String word = "";
-        for(int i:DocIdAndContent.keySet()){
-            word = DocIdAndContent.get(i);
-            if(TermFreqInDocument.containsValue(word)){
-
-            }
-
-        }
-        return TermFreqInDocument;
-    }
-
     private static Map<String, Integer> buildFrequencyinCorpus(Map<String, Integer> TermFreqInCorpus) {
         String word = "";
         
@@ -203,10 +188,37 @@ public class Project2Take2 {
       
         return TermFrequency;        
     }
-
-
-//TODO : Implement queries
-
+    private static Map<Integer, Map<String, Double>> getScores(Map<Integer,Map<String,Integer>> TermFrequency ){
+        ClassicSimilarity similarity = new ClassicSimilarity();
+        Map<Integer, Map<String, Double>> tfidfScore = new HashMap<>();
+            for (int i: TermFrequency.keySet()){
+                Map<String, Integer> termFreqMap = TermFrequency.get(i);
+                Map<String,Double> tfid = new HashMap<>();
+                for (String word : termFreqMap.keySet()) {
+                    int termFreq = termFreqMap.get(word);
+                    int docFreq = getDocFreq(TermFrequency, word);
+                    int numDocs = TermFrequency.size();
+        
+                    double tfidf = similarity.tf(termFreq) * similarity.idf(docFreq, numDocs);
+                    tfid.put(word, tfidf);
+        }       
+        tfidfScore.put(i, tfid);
+    }
+    for (int i: tfidfScore.keySet()){
+        System.out.println(tfidfScore.get(i));
+    }
+        return tfidfScore;
+        
+    }
+    private static int getDocFreq(Map<Integer, Map<String,Integer>> termFrequency, String word){
+        int docFreq = 0;
+        for (Map<String,Integer> termFreqMap : termFrequency.values()){
+            if (termFreqMap.containsKey(word)){
+                docFreq+=1; 
+            }
+        }
+        return docFreq;
+    }
 }
 
 
