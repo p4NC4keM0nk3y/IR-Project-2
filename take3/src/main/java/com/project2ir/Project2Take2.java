@@ -2,26 +2,37 @@ package com.project2ir;
 import java.util.*;
 import java.io.*;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
-/**
- * TODO: 
- *
- * add query search
- */
 public class Project2Take2 {
     
     public static void main(String args[]){
         HashMap<Integer, String>DocIdAndTitle = new HashMap<Integer, String>();
         HashMap<Integer, String>DocIdAndContent = new HashMap<Integer,String>();
-        Map<Integer,Map<String, Integer>>TermFreqInDocument = new HashMap<Integer,Map<String, Integer>>();
+        //Map<Integer,Map<String, Integer>>TermFreqInDocument = new HashMap<Integer,Map<String, Integer>>();
         Map<String,Integer> TermFreqInCorpus = new HashMap<String, Integer>();
-        Map<Integer,Map<String,Integer>> TermFrequency = new HashMap<Integer,Map<String,Integer>>();
+        Map<Integer,Map<String,Double>> TermFrequency = new HashMap<Integer,Map<String,Double>>();
         buildNumber(DocIdAndTitle);
         buildContent(DocIdAndContent);
         buildFrequencyinCorpus(TermFreqInCorpus);
         TermFreq(DocIdAndContent, TermFrequency);
         Map<Integer, Map<String, Double>> tfidfScore = getScores(TermFrequency);
-        String query = "";
-        QuerySearch(query, tfidfScore);
+        Map<Integer, String> queries = getTheQueries();
+        List<Integer> queryIDs = new ArrayList<>(queries.keySet());
+        Collections.shuffle(queryIDs);
+        int numQueries = Math.min(20, queryIDs.size());
+        for (int i = 0; i < numQueries; i++) {
+        int queryID = queryIDs.get(i);
+        String query = queries.get(queryID);
+        System.out.println(".I " + queryID);
+        System.out.println(query);
+        List<Integer> relDocs = QuerySearch(query, tfidfScore);
+        System.out.println("Top relevant documents for the query:");
+        for (int docId : relDocs) {
+            System.out.println("Document ID: " + docId);
+        }
+        System.out.println();
+    }
+
+
 
     }
     private static HashMap<Integer,String> buildNumber(HashMap<Integer,String> DocIdAndTitle){
@@ -164,89 +175,141 @@ public class Project2Take2 {
     *   return TotalCount;
     *}
     **/
-    private static Map<Integer,Map<String,Integer>> TermFreq(HashMap<Integer, String> DocIdAndContent , Map<Integer, Map<String, Integer>> TermFrequency){
-        for (int i: DocIdAndContent.keySet()){
-
+    private static Map<Integer, Map<String, Double>> TermFreq(HashMap<Integer, String> DocIdAndContent, Map<Integer, Map<String, Double>> TermFrequency) {
+        for (int i : DocIdAndContent.keySet()) {
             String words = DocIdAndContent.get(i);
-            Map<String, Integer> termFreqMap = new HashMap<>();
-            
+            Map<String, Double> termFreqMap = new HashMap<>();
             StringTokenizer tokenizer = new StringTokenizer(words);
-            while (tokenizer.hasMoreTokens()){
-                String word = tokenizer.nextToken();
-                word = word.toLowerCase();
+            while (tokenizer.hasMoreTokens()) {
+                String word = tokenizer.nextToken().toLowerCase();
                 if (word.equals(".a") || word.equals(".i") || word.equals(".w") || word.equals(".b") || word.equals(".t")) {
                     continue;
                 }
-
-               
-    
-                termFreqMap.put(word, termFreqMap.getOrDefault(word, 0)+1);
+                termFreqMap.put(word, termFreqMap.getOrDefault(word, 0.0) + 1);
             }
-
             TermFrequency.put(i, termFreqMap);
         }
-        for(int j: TermFrequency.keySet()){
-            System.out.println(TermFrequency.get(j));
-        }
-      
         return TermFrequency;        
     }
-    private static Map<Integer, Map<String, Double>> getScores(Map<Integer,Map<String,Integer>> TermFrequency ){
+    
+    private static Map<Integer, Map<String, Double>> getScores(Map<Integer, Map<String, Double>> TermFrequency) {
         ClassicSimilarity similarity = new ClassicSimilarity();
         Map<Integer, Map<String, Double>> tfidfScore = new HashMap<>();
-            for (int i: TermFrequency.keySet()){
-                Map<String, Integer> termFreqMap = TermFrequency.get(i);
-                Map<String,Double> tfid = new HashMap<>();
-                for (String word : termFreqMap.keySet()) {
-                    int termFreq = termFreqMap.get(word);
-                    int docFreq = getDocFreq(TermFrequency, word);
-                    int numDocs = TermFrequency.size();
-        
-                    double tfidf = similarity.tf(termFreq) * similarity.idf(docFreq, numDocs);
-                    tfid.put(word, tfidf);
-        }       
-        tfidfScore.put(i, tfid);
-    }
-    for (int i: tfidfScore.keySet()){
-        System.out.println(tfidfScore.get(i));
-    }
+        for (int i : TermFrequency.keySet()) {
+            Map<String, Double> termFreqMap = TermFrequency.get(i);
+            Map<String, Double> tfid = new HashMap<>();
+            for (String word : termFreqMap.keySet()) {
+                int termFreq = termFreqMap.get(word).intValue();
+                int docFreq = getDocFreq(TermFrequency, word);
+                int numDocs = TermFrequency.size();
+                double tfidf = similarity.tf(termFreq) * similarity.idf(docFreq, numDocs);
+                tfid.put(word, tfidf);
+            }       
+            tfidfScore.put(i, tfid);
+        }
         return tfidfScore;
-        
     }
-    private static int getDocFreq(Map<Integer, Map<String,Integer>> termFrequency, String word){
+    private static int getDocFreq(Map<Integer, Map<String, Double>> termFrequency, String word) {
         int docFreq = 0;
-        for (Map<String,Integer> termFreqMap : termFrequency.values()){
-            if (termFreqMap.containsKey(word)){
-                docFreq+=1; 
+        for (Map<String, Double> termFreqMap : termFrequency.values()) {
+            if (termFreqMap.containsKey(word)) {
+                docFreq++;
             }
         }
-        //System.out.println(docFreq);
         return docFreq;
     }
-    private static List<Integer> QuerySearch(String query, Map<Integer, Map<String,Double>> tfidfScore){
-        String [] queried = query.toLowerCase().split("\\s+");
-        Map <String,Double> calcQuery = new HashMap<>();
-        Map <Integer,Double> Scores = new HashMap<>();
-        List <Integer> RelDocs = new ArrayList<>(Scores.keySet());
+    
+    private static List<Integer> QuerySearch(String query, Map<Integer, Map<String, Double>> tfidfScore) {
+        String[] queried = query.toLowerCase().split("\\s+");
+        Map<String, Double> calcQuery = new HashMap<>();
+        Map<Integer, Double> Scores = new HashMap<>();
         int returnNum = 10;
-        for (String term: queried){
-            int docFreq = tfidfScore.get(term);
+        
+        for (String word : queried) {
+            int docFreq = getDocFreq(tfidfScore, word);
             int numDocs = tfidfScore.size();
-            double idf = Math.log((double) numDocs / (docFreq+1));
-            calcQuery.put(term, idf);
-
+            double idf = Math.log((double) numDocs / (docFreq + 1));
+            calcQuery.put(word, idf);
         }
-        for (int docID: tfidfScore.keySet()){
-            double simScore = calcSim(queried, tfidfScore.get(docID));
+        
+        for (int docID : tfidfScore.keySet()) {
+            double simScore = calcSim(calcQuery, tfidfScore.get(docID));
             Scores.put(docID, simScore);
         }
+        
+        List<Integer> RelDocs = new ArrayList<>(Scores.keySet());
         Collections.sort(RelDocs, (a, b) -> Double.compare(Scores.get(b), Scores.get(a)));
-
-        return RelDocs.subList(0,Math.min(returnNum, RelDocs.size()));
-    } 
-
+        //System.out.println(RelDocs.subList(0, Math.min(returnNum, RelDocs.size())));
+        return RelDocs.subList(0, Math.min(returnNum, RelDocs.size()));
+    }
+    private static double calcSim(Map<String, Double> queried, Map<String, Double> Scores) {
+        double dotProd = 0.0;
+        double queryNorm = 0.0;
+        double docNorm = 0.0;
+        
+        for (String term : queried.keySet()) {
+            if (Scores.containsKey(term)) {
+                dotProd += Scores.get(term) * queried.get(term);
+            }
+            queryNorm += Math.pow(queried.get(term), 2);
+        }
+        
+        for (double number : Scores.values()) {
+            docNorm += Math.pow(number, 2);
+        }
+        
+        return dotProd / (Math.sqrt(queryNorm) * Math.sqrt(docNorm));
 
 }
+private static Map<Integer, String> getTheQueries() {
+    String filename = "cran.qry";
+    Map<Integer, String> queries = new HashMap<>();
+    int queryID = 0;
+    String query = "";
 
+    try {
+        File file = new File(filename);
+        Scanner scanner = new Scanner(file);
 
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+
+            if (line.startsWith(".I")) {
+                if (!query.isEmpty()) {
+                    queries.put(queryID, query.trim());
+                    query = "";  // Reset query for the next one
+                }
+                queryID = Integer.parseInt(line.substring(3).trim());
+            } else if (line.startsWith(".W")) {
+                query = "";
+                while (scanner.hasNextLine()) {
+                    line = scanner.nextLine();
+                    if (line.startsWith(".I")) {
+                        queries.put(queryID, query.trim());
+                        queryID = Integer.parseInt(line.substring(3).trim());
+                        query = "";
+                        break;  // Break to start processing the next query
+                    } else {
+                        query += line + " ";
+                    }
+                }
+                queries.put(queryID, query.trim());
+            }
+        }
+
+        // Add the last query if there's any
+        if (!query.isEmpty()) {
+            queries.put(queryID, query.trim());
+        }
+
+        scanner.close();
+    } catch (FileNotFoundException e) {
+        System.out.println("An error occurred.");
+        e.printStackTrace();
+    }
+
+    return queries;
+}
+
+}
 
