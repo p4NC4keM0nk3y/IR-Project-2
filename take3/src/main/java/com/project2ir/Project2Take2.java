@@ -19,8 +19,9 @@ public class Project2Take2 {
         buildContent(DocIdAndContent);
         buildFrequencyinCorpus(TermFreqInCorpus);
         TermFreq(DocIdAndContent, TermFrequency);
-        getScores(TermFrequency);
-
+        Map<Integer, Map<String, Double>> tfidfScore = getScores(TermFrequency);
+        String query = "";
+        QuerySearch(query, tfidfScore);
 
     }
     private static HashMap<Integer,String> buildNumber(HashMap<Integer,String> DocIdAndTitle){
@@ -154,13 +155,15 @@ public class Project2Take2 {
     */  
         return TermFreqInCorpus;
     }
-    private static Integer wordCount(Map<String,Integer> TermFreqInCorpus){
-        int TotalCount = 0; 
-        for(String i:TermFreqInCorpus.keySet()){
-            TotalCount+=TermFreqInCorpus.get(i);
-        }
-        return TotalCount;
-    }
+    /**
+    *private static Integer wordCount(Map<String,Integer> TermFreqInCorpus){
+    *   int TotalCount = 0; 
+    *   for(String i:TermFreqInCorpus.keySet()){
+    *       TotalCount+=TermFreqInCorpus.get(i);
+    *   }
+    *   return TotalCount;
+    *}
+    **/
     private static Map<Integer,Map<String,Integer>> TermFreq(HashMap<Integer, String> DocIdAndContent , Map<Integer, Map<String, Integer>> TermFrequency){
         for (int i: DocIdAndContent.keySet()){
 
@@ -217,8 +220,32 @@ public class Project2Take2 {
                 docFreq+=1; 
             }
         }
+        //System.out.println(docFreq);
         return docFreq;
     }
+    private static List<Integer> QuerySearch(String query, Map<Integer, Map<String,Double>> tfidfScore){
+        String [] queried = query.toLowerCase().split("\\s+");
+        Map <String,Double> calcQuery = new HashMap<>();
+        Map <Integer,Double> Scores = new HashMap<>();
+        List <Integer> RelDocs = new ArrayList<>(Scores.keySet());
+        int returnNum = 10;
+        for (String term: queried){
+            int docFreq = tfidfScore.get(term);
+            int numDocs = tfidfScore.size();
+            double idf = Math.log((double) numDocs / (docFreq+1));
+            calcQuery.put(term, idf);
+
+        }
+        for (int docID: tfidfScore.keySet()){
+            double simScore = calcSim(queried, tfidfScore.get(docID));
+            Scores.put(docID, simScore);
+        }
+        Collections.sort(RelDocs, (a, b) -> Double.compare(Scores.get(b), Scores.get(a)));
+
+        return RelDocs.subList(0,Math.min(returnNum, RelDocs.size()));
+    } 
+
+
 }
 
 
