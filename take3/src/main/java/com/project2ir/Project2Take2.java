@@ -66,10 +66,12 @@ public class Project2Take2 {
             System.out.println("An error occurred.");
             e.printStackTrace();
           }
-          for (int i : DocIdAndTitle.keySet()) {
+         /** 
+          * for (int i : DocIdAndTitle.keySet()) {
             System.out.println("key: " + i + " value: " + DocIdAndTitle.get(i));
           }
-    
+          *
+          */ 
         return DocIdAndTitle;
     }
     
@@ -115,10 +117,10 @@ public class Project2Take2 {
             System.out.println("An error occurred.");
             e.printStackTrace();
         }
-        for(int i:DocIdAndContent.keySet()){
+     /**    for(int i:DocIdAndContent.keySet()){
         System.out.println("key:"+i + " value: " + DocIdAndContent.get(i)+ "\n");
         }
-    
+    */
         return DocIdAndContent;
     }
 
