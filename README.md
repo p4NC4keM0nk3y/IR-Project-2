@@ -9,7 +9,7 @@ Maven is installed on your system. (https://maven.apache.org)
 Clone this repository
 ### Option 1
 navigate to /USERS_FILE_SYSTEM/IR-Project-2/take3/
-run mvn compile
+\n run mvn compile
 run javac project2ir.java
 run java project2ir
 ### Option 2 
