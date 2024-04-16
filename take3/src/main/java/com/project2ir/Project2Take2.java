@@ -1,7 +1,6 @@
 package com.project2ir;
 import java.util.*;
 import java.io.*;
-import org.apache.lucene.search.similarities.ClassicSimilarity;
 public class Project2Take2 {
     
     public static void main(String args[]){
@@ -195,7 +194,6 @@ public class Project2Take2 {
     }
     
     private static Map<Integer, Map<String, Double>> getScores(Map<Integer, Map<String, Double>> TermFrequency) {
-        ClassicSimilarity similarity = new ClassicSimilarity();
         Map<Integer, Map<String, Double>> tfidfScore = new HashMap<>();
         for (int i : TermFrequency.keySet()) {
             Map<String, Double> termFreqMap = TermFrequency.get(i);
@@ -204,12 +202,20 @@ public class Project2Take2 {
                 int termFreq = termFreqMap.get(word).intValue();
                 int docFreq = getDocFreq(TermFrequency, word);
                 int numDocs = TermFrequency.size();
-                double tfidf = similarity.tf(termFreq) * similarity.idf(docFreq, numDocs);
+                double tf = getTf(termFreq);
+                double idf = getIdf(docFreq, numDocs);
+                double tfidf = tf * idf;
                 tfid.put(word, tfidf);
             }       
             tfidfScore.put(i, tfid);
         }
         return tfidfScore;
+    }
+    private static double getTf(int termFreq){
+        return 1 + Math.log(termFreq);
+    }
+    private static double getIdf(int docFreq, int numDocs){
+        return Math.log(numDocs / (double) docFreq);
     }
     private static int getDocFreq(Map<Integer, Map<String, Double>> termFrequency, String word) {
         int docFreq = 0;
